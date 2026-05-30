@@ -1,0 +1,901 @@
+{
+    "$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "factoryName": {
+            "type": "string",
+            "metadata": "Data Factory name",
+            "defaultValue": "logistic-adf"
+        },
+        "RestCountry_Trigger_properties_restCountry_ingestion_parameters_RestCountry_api": {
+            "type": "string",
+            "defaultValue": "?fields=name,capital,timezones,region,currencies"
+        },
+        "openWeatherMap_Trigger_properties_OpenWeatherMap_ingestion_parameters_OpenWeather_Api_Key": {
+            "type": "string",
+            "defaultValue": "a77407607388c1258e807910fc19780e"
+        },
+        "TomTom_Trigger_properties_TomTom_ingestion_parameters_TomTom_api": {
+            "type": "string",
+            "defaultValue": "K5LM2atJ1Mx6ujWDJkvKCBTl6MEdE6FV"
+        },
+        "openMeteo_Trigger_properties_openmeteo_ingestion_parameters_OpenMetro_api": {
+            "type": "string",
+            "defaultValue": "&hourly=temperature_2m,rain,snowfall,precipitation_probability,wind_speed_10m,visibility,weather_code"
+        },
+        "Wagi_Trigger_properties_Waqi_ingestion_parameters_waqi_api_key": {
+            "type": "string",
+            "defaultValue": "e548efc8f3854921d7edebe4e85b71216b3c2b81"
+        }
+    },
+    "variables": {
+        "factoryId": "[concat('Microsoft.DataFactory/factories/', parameters('factoryName'))]"
+    },
+    "resources": [
+        {
+            "name": "[concat(parameters('factoryName'), '/openmeteo_ingestion')]",
+            "type": "Microsoft.DataFactory/factories/pipelines",
+            "apiVersion": "2018-06-01",
+            "properties": {
+                "activities": [
+                    {
+                        "name": "loop_openMeteo",
+                        "type": "ForEach",
+                        "dependsOn": [
+                            {
+                                "activity": "LookupConfigFile",
+                                "dependencyConditions": [
+                                    "Succeeded"
+                                ]
+                            }
+                        ],
+                        "userProperties": [],
+                        "typeProperties": {
+                            "items": {
+                                "value": "@activity('LookupConfigFile').output.value[0].cities",
+                                "type": "Expression"
+                            },
+                            "batchCount": 3,
+                            "activities": [
+                                {
+                                    "name": "CopyOpenMeteo",
+                                    "type": "Copy",
+                                    "dependsOn": [],
+                                    "policy": {
+                                        "timeout": "0.12:00:00",
+                                        "retry": 0,
+                                        "retryIntervalInSeconds": 30,
+                                        "secureOutput": false,
+                                        "secureInput": false
+                                    },
+                                    "userProperties": [],
+                                    "typeProperties": {
+                                        "source": {
+                                            "type": "JsonSource",
+                                            "storeSettings": {
+                                                "type": "HttpReadSettings",
+                                                "requestMethod": "GET"
+                                            },
+                                            "formatSettings": {
+                                                "type": "JsonReadSettings"
+                                            }
+                                        },
+                                        "sink": {
+                                            "type": "JsonSink",
+                                            "storeSettings": {
+                                                "type": "AzureBlobFSWriteSettings"
+                                            },
+                                            "formatSettings": {
+                                                "type": "JsonWriteSettings"
+                                            }
+                                        },
+                                        "enableStaging": false
+                                    },
+                                    "inputs": [
+                                        {
+                                            "referenceName": "openMeteo_source",
+                                            "type": "DatasetReference",
+                                            "parameters": {
+                                                "lat": {
+                                                    "value": "@item().lat",
+                                                    "type": "Expression"
+                                                },
+                                                "lon": {
+                                                    "value": "@item().lon",
+                                                    "type": "Expression"
+                                                },
+                                                "api_key": {
+                                                    "value": "@pipeline().parameters.OpenMetro_api",
+                                                    "type": "Expression"
+                                                }
+                                            }
+                                        }
+                                    ],
+                                    "outputs": [
+                                        {
+                                            "referenceName": "OpenMeteo_sink",
+                                            "type": "DatasetReference",
+                                            "parameters": {
+                                                "city_name": {
+                                                    "value": "@item().name",
+                                                    "type": "Expression"
+                                                }
+                                            }
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    },
+                    {
+                        "name": "LookupConfigFile",
+                        "type": "Lookup",
+                        "dependsOn": [],
+                        "policy": {
+                            "timeout": "0.12:00:00",
+                            "retry": 0,
+                            "retryIntervalInSeconds": 30,
+                            "secureOutput": false,
+                            "secureInput": false
+                        },
+                        "userProperties": [],
+                        "typeProperties": {
+                            "source": {
+                                "type": "JsonSource",
+                                "storeSettings": {
+                                    "type": "AzureBlobFSReadSettings",
+                                    "recursive": true,
+                                    "enablePartitionDiscovery": false
+                                },
+                                "formatSettings": {
+                                    "type": "JsonReadSettings"
+                                }
+                            },
+                            "dataset": {
+                                "referenceName": "config",
+                                "type": "DatasetReference",
+                                "parameters": {}
+                            },
+                            "firstRowOnly": false
+                        }
+                    },
+                    {
+                        "name": "openMeteo_notebook",
+                        "type": "DatabricksNotebook",
+                        "dependsOn": [
+                            {
+                                "activity": "loop_openMeteo",
+                                "dependencyConditions": [
+                                    "Succeeded"
+                                ]
+                            }
+                        ],
+                        "policy": {
+                            "timeout": "0.12:00:00",
+                            "retry": 0,
+                            "retryIntervalInSeconds": 30,
+                            "secureOutput": false,
+                            "secureInput": false
+                        },
+                        "userProperties": [],
+                        "typeProperties": {
+                            "notebookPath": "/Users/jitumistry.banaotech@gmail.com/silver_layer/silver_openMeteo"
+                        },
+                        "linkedServiceName": {
+                            "referenceName": "databricks_logostics",
+                            "type": "LinkedServiceReference"
+                        }
+                    }
+                ],
+                "policy": {
+                    "elapsedTimeMetric": {}
+                },
+                "parameters": {
+                    "OpenMetro_api": {
+                        "type": "string",
+                        "defaultValue": "&hourly=temperature_2m,rain,snowfall,precipitation_probability,wind_speed_10m,visibility,weather_code"
+                    }
+                },
+                "annotations": [],
+                "lastPublishTime": "2026-05-30T01:42:39Z"
+            },
+            "dependsOn": []
+        },
+        {
+            "name": "[concat(parameters('factoryName'), '/TomTom_ingestion')]",
+            "type": "Microsoft.DataFactory/factories/pipelines",
+            "apiVersion": "2018-06-01",
+            "properties": {
+                "activities": [
+                    {
+                        "name": "loop_tomTom",
+                        "type": "ForEach",
+                        "dependsOn": [
+                            {
+                                "activity": "LookupConfigFile",
+                                "dependencyConditions": [
+                                    "Succeeded"
+                                ]
+                            }
+                        ],
+                        "userProperties": [],
+                        "typeProperties": {
+                            "items": {
+                                "value": "@activity('LookupConfigFile').output.value[0].cities",
+                                "type": "Expression"
+                            },
+                            "batchCount": 3,
+                            "activities": [
+                                {
+                                    "name": "CopyTomTom",
+                                    "type": "Copy",
+                                    "dependsOn": [],
+                                    "policy": {
+                                        "timeout": "0.12:00:00",
+                                        "retry": 0,
+                                        "retryIntervalInSeconds": 30,
+                                        "secureOutput": false,
+                                        "secureInput": false
+                                    },
+                                    "userProperties": [],
+                                    "typeProperties": {
+                                        "source": {
+                                            "type": "JsonSource",
+                                            "storeSettings": {
+                                                "type": "HttpReadSettings",
+                                                "requestMethod": "GET"
+                                            },
+                                            "formatSettings": {
+                                                "type": "JsonReadSettings"
+                                            }
+                                        },
+                                        "sink": {
+                                            "type": "JsonSink",
+                                            "storeSettings": {
+                                                "type": "AzureBlobFSWriteSettings"
+                                            },
+                                            "formatSettings": {
+                                                "type": "JsonWriteSettings"
+                                            }
+                                        },
+                                        "enableStaging": false
+                                    },
+                                    "inputs": [
+                                        {
+                                            "referenceName": "TomTom_source",
+                                            "type": "DatasetReference",
+                                            "parameters": {
+                                                "api_key": {
+                                                    "value": "@pipeline().parameters.TomTom_api",
+                                                    "type": "Expression"
+                                                },
+                                                "lat": {
+                                                    "value": "@item().lat",
+                                                    "type": "Expression"
+                                                },
+                                                "lon": {
+                                                    "value": "@item().lon",
+                                                    "type": "Expression"
+                                                }
+                                            }
+                                        }
+                                    ],
+                                    "outputs": [
+                                        {
+                                            "referenceName": "TomTom_sink",
+                                            "type": "DatasetReference",
+                                            "parameters": {
+                                                "city_name": {
+                                                    "value": "@item().name",
+                                                    "type": "Expression"
+                                                }
+                                            }
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    },
+                    {
+                        "name": "LookupConfigFile",
+                        "type": "Lookup",
+                        "dependsOn": [],
+                        "policy": {
+                            "timeout": "0.12:00:00",
+                            "retry": 0,
+                            "retryIntervalInSeconds": 30,
+                            "secureOutput": false,
+                            "secureInput": false
+                        },
+                        "userProperties": [],
+                        "typeProperties": {
+                            "source": {
+                                "type": "JsonSource",
+                                "storeSettings": {
+                                    "type": "AzureBlobFSReadSettings",
+                                    "recursive": true,
+                                    "enablePartitionDiscovery": false
+                                },
+                                "formatSettings": {
+                                    "type": "JsonReadSettings"
+                                }
+                            },
+                            "dataset": {
+                                "referenceName": "config",
+                                "type": "DatasetReference",
+                                "parameters": {}
+                            },
+                            "firstRowOnly": false
+                        }
+                    },
+                    {
+                        "name": "tomTom_Notebook",
+                        "type": "DatabricksNotebook",
+                        "dependsOn": [
+                            {
+                                "activity": "loop_tomTom",
+                                "dependencyConditions": [
+                                    "Succeeded"
+                                ]
+                            }
+                        ],
+                        "policy": {
+                            "timeout": "0.12:00:00",
+                            "retry": 0,
+                            "retryIntervalInSeconds": 30,
+                            "secureOutput": false,
+                            "secureInput": false
+                        },
+                        "userProperties": [],
+                        "typeProperties": {
+                            "notebookPath": "/Users/jitumistry.banaotech@gmail.com/silver_layer/silver_TomTom"
+                        },
+                        "linkedServiceName": {
+                            "referenceName": "databricks_logostics",
+                            "type": "LinkedServiceReference"
+                        }
+                    }
+                ],
+                "policy": {
+                    "elapsedTimeMetric": {}
+                },
+                "parameters": {
+                    "TomTom_api": {
+                        "type": "string",
+                        "defaultValue": "K5LM2atJ1Mx6ujWDJkvKCBTl6MEdE6FV"
+                    }
+                },
+                "annotations": [],
+                "lastPublishTime": "2026-05-30T01:42:38Z"
+            },
+            "dependsOn": []
+        },
+        {
+            "name": "[concat(parameters('factoryName'), '/restCountry_ingestion')]",
+            "type": "Microsoft.DataFactory/factories/pipelines",
+            "apiVersion": "2018-06-01",
+            "properties": {
+                "activities": [
+                    {
+                        "name": "loop_restCountry",
+                        "type": "ForEach",
+                        "dependsOn": [
+                            {
+                                "activity": "LookupConfigFile",
+                                "dependencyConditions": [
+                                    "Succeeded"
+                                ]
+                            }
+                        ],
+                        "userProperties": [],
+                        "typeProperties": {
+                            "items": {
+                                "value": "@activity('LookupConfigFile').output.value[0].cities",
+                                "type": "Expression"
+                            },
+                            "batchCount": 3,
+                            "activities": [
+                                {
+                                    "name": "CopyRestCountry",
+                                    "type": "Copy",
+                                    "dependsOn": [],
+                                    "policy": {
+                                        "timeout": "0.12:00:00",
+                                        "retry": 0,
+                                        "retryIntervalInSeconds": 30,
+                                        "secureOutput": false,
+                                        "secureInput": false
+                                    },
+                                    "userProperties": [],
+                                    "typeProperties": {
+                                        "source": {
+                                            "type": "JsonSource",
+                                            "storeSettings": {
+                                                "type": "HttpReadSettings",
+                                                "requestMethod": "GET"
+                                            },
+                                            "formatSettings": {
+                                                "type": "JsonReadSettings"
+                                            }
+                                        },
+                                        "sink": {
+                                            "type": "JsonSink",
+                                            "storeSettings": {
+                                                "type": "AzureBlobFSWriteSettings"
+                                            },
+                                            "formatSettings": {
+                                                "type": "JsonWriteSettings"
+                                            }
+                                        },
+                                        "enableStaging": false
+                                    },
+                                    "inputs": [
+                                        {
+                                            "referenceName": "RestCountry_source",
+                                            "type": "DatasetReference",
+                                            "parameters": {
+                                                "country_code": {
+                                                    "value": "@item().country",
+                                                    "type": "Expression"
+                                                },
+                                                "Api_key": {
+                                                    "value": "@pipeline().parameters.RestCountry_api",
+                                                    "type": "Expression"
+                                                }
+                                            }
+                                        }
+                                    ],
+                                    "outputs": [
+                                        {
+                                            "referenceName": "RestCountry_sink",
+                                            "type": "DatasetReference",
+                                            "parameters": {
+                                                "Country_name": {
+                                                    "value": "@item().country",
+                                                    "type": "Expression"
+                                                }
+                                            }
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    },
+                    {
+                        "name": "LookupConfigFile",
+                        "type": "Lookup",
+                        "dependsOn": [],
+                        "policy": {
+                            "timeout": "0.12:00:00",
+                            "retry": 0,
+                            "retryIntervalInSeconds": 30,
+                            "secureOutput": false,
+                            "secureInput": false
+                        },
+                        "userProperties": [],
+                        "typeProperties": {
+                            "source": {
+                                "type": "JsonSource",
+                                "storeSettings": {
+                                    "type": "AzureBlobFSReadSettings",
+                                    "recursive": true,
+                                    "enablePartitionDiscovery": false
+                                },
+                                "formatSettings": {
+                                    "type": "JsonReadSettings"
+                                }
+                            },
+                            "dataset": {
+                                "referenceName": "config",
+                                "type": "DatasetReference",
+                                "parameters": {}
+                            },
+                            "firstRowOnly": false
+                        }
+                    },
+                    {
+                        "name": "REstCountry_Notebook",
+                        "type": "DatabricksNotebook",
+                        "dependsOn": [
+                            {
+                                "activity": "loop_restCountry",
+                                "dependencyConditions": [
+                                    "Succeeded"
+                                ]
+                            }
+                        ],
+                        "policy": {
+                            "timeout": "0.12:00:00",
+                            "retry": 0,
+                            "retryIntervalInSeconds": 30,
+                            "secureOutput": false,
+                            "secureInput": false
+                        },
+                        "userProperties": [],
+                        "typeProperties": {
+                            "notebookPath": "/Users/jitumistry.banaotech@gmail.com/silver_layer/silver_restCountries"
+                        },
+                        "linkedServiceName": {
+                            "referenceName": "databricks_logostics",
+                            "type": "LinkedServiceReference"
+                        }
+                    }
+                ],
+                "policy": {
+                    "elapsedTimeMetric": {}
+                },
+                "parameters": {
+                    "RestCountry_api": {
+                        "type": "string",
+                        "defaultValue": "?fields=name,capital,timezones,region,currencies"
+                    }
+                },
+                "annotations": [],
+                "lastPublishTime": "2026-05-30T01:42:38Z"
+            },
+            "dependsOn": []
+        },
+        {
+            "name": "[concat(parameters('factoryName'), '/Waqi_ingestion')]",
+            "type": "Microsoft.DataFactory/factories/pipelines",
+            "apiVersion": "2018-06-01",
+            "properties": {
+                "activities": [
+                    {
+                        "name": "loop_Waqi",
+                        "type": "ForEach",
+                        "dependsOn": [
+                            {
+                                "activity": "LookupConfigFile",
+                                "dependencyConditions": [
+                                    "Succeeded"
+                                ]
+                            }
+                        ],
+                        "userProperties": [],
+                        "typeProperties": {
+                            "items": {
+                                "value": "@activity('LookupConfigFile').output.value[0].cities",
+                                "type": "Expression"
+                            },
+                            "batchCount": 3,
+                            "activities": [
+                                {
+                                    "name": "CopyWaqi",
+                                    "type": "Copy",
+                                    "dependsOn": [],
+                                    "policy": {
+                                        "timeout": "0.12:00:00",
+                                        "retry": 0,
+                                        "retryIntervalInSeconds": 30,
+                                        "secureOutput": false,
+                                        "secureInput": false
+                                    },
+                                    "userProperties": [],
+                                    "typeProperties": {
+                                        "source": {
+                                            "type": "JsonSource",
+                                            "storeSettings": {
+                                                "type": "HttpReadSettings",
+                                                "requestMethod": "GET"
+                                            },
+                                            "formatSettings": {
+                                                "type": "JsonReadSettings"
+                                            }
+                                        },
+                                        "sink": {
+                                            "type": "JsonSink",
+                                            "storeSettings": {
+                                                "type": "AzureBlobFSWriteSettings"
+                                            },
+                                            "formatSettings": {
+                                                "type": "JsonWriteSettings"
+                                            }
+                                        },
+                                        "enableStaging": false
+                                    },
+                                    "inputs": [
+                                        {
+                                            "referenceName": "Waqi_source",
+                                            "type": "DatasetReference",
+                                            "parameters": {
+                                                "lat": {
+                                                    "value": "@item().lat",
+                                                    "type": "Expression"
+                                                },
+                                                "lon": {
+                                                    "value": "@item().lon",
+                                                    "type": "Expression"
+                                                },
+                                                "api_key": {
+                                                    "value": "@pipeline().parameters.waqi_api_key",
+                                                    "type": "Expression"
+                                                }
+                                            }
+                                        }
+                                    ],
+                                    "outputs": [
+                                        {
+                                            "referenceName": "Waqi_sink",
+                                            "type": "DatasetReference",
+                                            "parameters": {
+                                                "city_name": {
+                                                    "value": "@item().name",
+                                                    "type": "Expression"
+                                                }
+                                            }
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    },
+                    {
+                        "name": "LookupConfigFile",
+                        "type": "Lookup",
+                        "dependsOn": [],
+                        "policy": {
+                            "timeout": "0.12:00:00",
+                            "retry": 0,
+                            "retryIntervalInSeconds": 30,
+                            "secureOutput": false,
+                            "secureInput": false
+                        },
+                        "userProperties": [],
+                        "typeProperties": {
+                            "source": {
+                                "type": "JsonSource",
+                                "storeSettings": {
+                                    "type": "AzureBlobFSReadSettings",
+                                    "recursive": true,
+                                    "enablePartitionDiscovery": false
+                                },
+                                "formatSettings": {
+                                    "type": "JsonReadSettings"
+                                }
+                            },
+                            "dataset": {
+                                "referenceName": "config",
+                                "type": "DatasetReference",
+                                "parameters": {}
+                            },
+                            "firstRowOnly": false
+                        }
+                    },
+                    {
+                        "name": "Wagi_Notebook",
+                        "type": "DatabricksNotebook",
+                        "dependsOn": [
+                            {
+                                "activity": "loop_Waqi",
+                                "dependencyConditions": [
+                                    "Succeeded"
+                                ]
+                            }
+                        ],
+                        "policy": {
+                            "timeout": "0.12:00:00",
+                            "retry": 0,
+                            "retryIntervalInSeconds": 30,
+                            "secureOutput": false,
+                            "secureInput": false
+                        },
+                        "userProperties": [],
+                        "typeProperties": {
+                            "notebookPath": "/Users/jitumistry.banaotech@gmail.com/silver_layer/silver_waqi"
+                        },
+                        "linkedServiceName": {
+                            "referenceName": "databricks_logostics",
+                            "type": "LinkedServiceReference"
+                        }
+                    }
+                ],
+                "policy": {
+                    "elapsedTimeMetric": {}
+                },
+                "parameters": {
+                    "waqi_api_key": {
+                        "type": "string",
+                        "defaultValue": "e548efc8f3854921d7edebe4e85b71216b3c2b81"
+                    }
+                },
+                "annotations": [],
+                "lastPublishTime": "2026-05-30T01:42:40Z"
+            },
+            "dependsOn": []
+        },
+        {
+            "name": "[concat(parameters('factoryName'), '/trigger_gold_daily')]",
+            "type": "Microsoft.DataFactory/factories/triggers",
+            "apiVersion": "2018-06-01",
+            "properties": {
+                "annotations": [],
+                "runtimeState": "Started",
+                "pipelines": [
+                    {
+                        "pipelineReference": {
+                            "referenceName": "gold_master_pipeline",
+                            "type": "PipelineReference"
+                        },
+                        "parameters": {}
+                    }
+                ],
+                "type": "ScheduleTrigger",
+                "typeProperties": {
+                    "recurrence": {
+                        "frequency": "Day",
+                        "interval": 1,
+                        "startTime": "2026-05-30T01:46:00",
+                        "timeZone": "India Standard Time",
+                        "schedule": {
+                            "hours": [
+                                1
+                            ]
+                        }
+                    }
+                }
+            },
+            "dependsOn": []
+        },
+        {
+            "name": "[concat(parameters('factoryName'), '/RestCountry_Trigger')]",
+            "type": "Microsoft.DataFactory/factories/triggers",
+            "apiVersion": "2018-06-01",
+            "properties": {
+                "annotations": [],
+                "runtimeState": "Started",
+                "pipelines": [
+                    {
+                        "pipelineReference": {
+                            "referenceName": "restCountry_ingestion",
+                            "type": "PipelineReference"
+                        },
+                        "parameters": {
+                            "RestCountry_api": "[parameters('RestCountry_Trigger_properties_restCountry_ingestion_parameters_RestCountry_api')]"
+                        }
+                    }
+                ],
+                "type": "ScheduleTrigger",
+                "typeProperties": {
+                    "recurrence": {
+                        "frequency": "Day",
+                        "interval": 1,
+                        "startTime": "2026-05-24T00:00:00",
+                        "timeZone": "India Standard Time",
+                        "schedule": {}
+                    }
+                }
+            },
+            "dependsOn": [
+                "[concat(variables('factoryId'), '/pipelines/restCountry_ingestion')]"
+            ]
+        },
+        {
+            "name": "[concat(parameters('factoryName'), '/openWeatherMap_Trigger')]",
+            "type": "Microsoft.DataFactory/factories/triggers",
+            "apiVersion": "2018-06-01",
+            "properties": {
+                "annotations": [],
+                "runtimeState": "Started",
+                "pipelines": [
+                    {
+                        "pipelineReference": {
+                            "referenceName": "OpenWeatherMap_ingestion",
+                            "type": "PipelineReference"
+                        },
+                        "parameters": {
+                            "OpenWeather_Api_Key": "[parameters('openWeatherMap_Trigger_properties_OpenWeatherMap_ingestion_parameters_OpenWeather_Api_Key')]"
+                        }
+                    }
+                ],
+                "type": "ScheduleTrigger",
+                "typeProperties": {
+                    "recurrence": {
+                        "frequency": "Minute",
+                        "interval": 15,
+                        "startTime": "2026-05-24T00:00:00",
+                        "timeZone": "India Standard Time"
+                    }
+                }
+            },
+            "dependsOn": []
+        },
+        {
+            "name": "[concat(parameters('factoryName'), '/TomTom_Trigger')]",
+            "type": "Microsoft.DataFactory/factories/triggers",
+            "apiVersion": "2018-06-01",
+            "properties": {
+                "annotations": [],
+                "runtimeState": "Started",
+                "pipelines": [
+                    {
+                        "pipelineReference": {
+                            "referenceName": "TomTom_ingestion",
+                            "type": "PipelineReference"
+                        },
+                        "parameters": {
+                            "TomTom_api": "[parameters('TomTom_Trigger_properties_TomTom_ingestion_parameters_TomTom_api')]"
+                        }
+                    }
+                ],
+                "type": "ScheduleTrigger",
+                "typeProperties": {
+                    "recurrence": {
+                        "frequency": "Minute",
+                        "interval": 15,
+                        "startTime": "2026-05-24T00:00:00",
+                        "timeZone": "India Standard Time"
+                    }
+                }
+            },
+            "dependsOn": [
+                "[concat(variables('factoryId'), '/pipelines/TomTom_ingestion')]"
+            ]
+        },
+        {
+            "name": "[concat(parameters('factoryName'), '/openMeteo_Trigger')]",
+            "type": "Microsoft.DataFactory/factories/triggers",
+            "apiVersion": "2018-06-01",
+            "properties": {
+                "annotations": [],
+                "runtimeState": "Started",
+                "pipelines": [
+                    {
+                        "pipelineReference": {
+                            "referenceName": "openmeteo_ingestion",
+                            "type": "PipelineReference"
+                        },
+                        "parameters": {
+                            "OpenMetro_api": "[parameters('openMeteo_Trigger_properties_openmeteo_ingestion_parameters_OpenMetro_api')]"
+                        }
+                    }
+                ],
+                "type": "ScheduleTrigger",
+                "typeProperties": {
+                    "recurrence": {
+                        "frequency": "Minute",
+                        "interval": 15,
+                        "startTime": "2026-05-24T00:00:00",
+                        "timeZone": "India Standard Time"
+                    }
+                }
+            },
+            "dependsOn": [
+                "[concat(variables('factoryId'), '/pipelines/openmeteo_ingestion')]"
+            ]
+        },
+        {
+            "name": "[concat(parameters('factoryName'), '/Wagi_Trigger')]",
+            "type": "Microsoft.DataFactory/factories/triggers",
+            "apiVersion": "2018-06-01",
+            "properties": {
+                "annotations": [],
+                "runtimeState": "Started",
+                "pipelines": [
+                    {
+                        "pipelineReference": {
+                            "referenceName": "Waqi_ingestion",
+                            "type": "PipelineReference"
+                        },
+                        "parameters": {
+                            "waqi_api_key": "[parameters('Wagi_Trigger_properties_Waqi_ingestion_parameters_waqi_api_key')]"
+                        }
+                    }
+                ],
+                "type": "ScheduleTrigger",
+                "typeProperties": {
+                    "recurrence": {
+                        "frequency": "Day",
+                        "interval": 1,
+                        "startTime": "2026-05-24T00:00:00",
+                        "timeZone": "India Standard Time",
+                        "schedule": {}
+                    }
+                }
+            },
+            "dependsOn": [
+                "[concat(variables('factoryId'), '/pipelines/Waqi_ingestion')]"
+            ]
+        }
+    ]
+}
