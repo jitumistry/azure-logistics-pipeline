@@ -1,0 +1,57 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "factoryName": {
+            "value": "logistic-adf"
+        },
+        "AzureDataLake_accountKey": {
+            "value": ""
+        },
+        "databricks_logostics_accessToken": {
+            "value": ""
+        },
+        "AzureDataLake_properties_typeProperties_url": {
+            "value": "https://logisticdatalakestorage.dfs.core.windows.net/"
+        },
+        "OpenWeather_Api_properties_typeProperties_url": {
+            "value": "http://api.openweathermap.org"
+        },
+        "myTomTom_Api_properties_typeProperties_url": {
+            "value": "https://api.tomtom.com"
+        },
+        "OpenMeteo_Api_properties_typeProperties_url": {
+            "value": "https://api.open-meteo.com"
+        },
+        "RestCountries_Api_properties_typeProperties_url": {
+            "value": "https://restcountries.com"
+        },
+        "Waqi_Api_properties_typeProperties_url": {
+            "value": "https://api.waqi.info/"
+        },
+        "databricks_logostics_properties_typeProperties_existingClusterId": {
+            "value": "0530-012328-1m22ux0i"
+        },
+        "RestCountry_Trigger_properties_restCountry_ingestion_parameters_RestCountry_api": {
+            "value": "?fields=name,capital,timezones,region,currencies"
+        },
+        "openWeatherMap_Trigger_properties_OpenWeatherMap_ingestion_parameters_OpenWeather_Api_Key": {
+            "value": "a77407607388c1258e807910fc19780e"
+        },
+        "TomTom_Trigger_properties_TomTom_ingestion_parameters_TomTom_api": {
+            "value": "K5LM2atJ1Mx6ujWDJkvKCBTl6MEdE6FV"
+        },
+        "openMeteo_Trigger_properties_openmeteo_ingestion_parameters_OpenMetro_api": {
+            "value": "&hourly=temperature_2m,rain,snowfall,precipitation_probability,wind_speed_10m,visibility,weather_code"
+        },
+        "Wagi_Trigger_properties_Waqi_ingestion_parameters_waqi_api_key": {
+            "value": "e548efc8f3854921d7edebe4e85b71216b3c2b81"
+        },
+        "containerUri": {
+            "value": ""
+        },
+        "containerSasToken": {
+            "value": ""
+        }
+    }
+}

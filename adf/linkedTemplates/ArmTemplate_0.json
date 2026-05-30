@@ -1,0 +1,1032 @@
+{
+    "$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "factoryName": {
+            "type": "string",
+            "metadata": "Data Factory name",
+            "defaultValue": "logistic-adf"
+        },
+        "AzureDataLake_accountKey": {
+            "type": "secureString",
+            "metadata": "Secure string for 'accountKey' of 'AzureDataLake'"
+        },
+        "databricks_logostics_accessToken": {
+            "type": "secureString",
+            "metadata": "Secure string for 'accessToken' of 'databricks_logostics'"
+        },
+        "AzureDataLake_properties_typeProperties_url": {
+            "type": "string",
+            "defaultValue": "https://logisticdatalakestorage.dfs.core.windows.net/"
+        },
+        "OpenWeather_Api_properties_typeProperties_url": {
+            "type": "string",
+            "defaultValue": "http://api.openweathermap.org"
+        },
+        "myTomTom_Api_properties_typeProperties_url": {
+            "type": "string",
+            "defaultValue": "https://api.tomtom.com"
+        },
+        "OpenMeteo_Api_properties_typeProperties_url": {
+            "type": "string",
+            "defaultValue": "https://api.open-meteo.com"
+        },
+        "RestCountries_Api_properties_typeProperties_url": {
+            "type": "string",
+            "defaultValue": "https://restcountries.com"
+        },
+        "Waqi_Api_properties_typeProperties_url": {
+            "type": "string",
+            "defaultValue": "https://api.waqi.info/"
+        },
+        "databricks_logostics_properties_typeProperties_existingClusterId": {
+            "type": "string",
+            "defaultValue": "0530-012328-1m22ux0i"
+        }
+    },
+    "variables": {
+        "factoryId": "[concat('Microsoft.DataFactory/factories/', parameters('factoryName'))]"
+    },
+    "resources": [
+        {
+            "name": "[concat(parameters('factoryName'), '/AzureDataLake')]",
+            "type": "Microsoft.DataFactory/factories/linkedServices",
+            "apiVersion": "2018-06-01",
+            "properties": {
+                "annotations": [],
+                "type": "AzureBlobFS",
+                "typeProperties": {
+                    "url": "[parameters('AzureDataLake_properties_typeProperties_url')]",
+                    "accountKey": {
+                        "type": "SecureString",
+                        "value": "[parameters('AzureDataLake_accountKey')]"
+                    }
+                }
+            },
+            "dependsOn": []
+        },
+        {
+            "name": "[concat(parameters('factoryName'), '/OpenWeather_Api')]",
+            "type": "Microsoft.DataFactory/factories/linkedServices",
+            "apiVersion": "2018-06-01",
+            "properties": {
+                "annotations": [],
+                "type": "HttpServer",
+                "typeProperties": {
+                    "url": "[parameters('OpenWeather_Api_properties_typeProperties_url')]",
+                    "enableServerCertificateValidation": true,
+                    "authenticationType": "Anonymous"
+                }
+            },
+            "dependsOn": []
+        },
+        {
+            "name": "[concat(parameters('factoryName'), '/myTomTom_Api')]",
+            "type": "Microsoft.DataFactory/factories/linkedServices",
+            "apiVersion": "2018-06-01",
+            "properties": {
+                "annotations": [],
+                "type": "HttpServer",
+                "typeProperties": {
+                    "url": "[parameters('myTomTom_Api_properties_typeProperties_url')]",
+                    "enableServerCertificateValidation": true,
+                    "authenticationType": "Anonymous"
+                }
+            },
+            "dependsOn": []
+        },
+        {
+            "name": "[concat(parameters('factoryName'), '/OpenMeteo_Api')]",
+            "type": "Microsoft.DataFactory/factories/linkedServices",
+            "apiVersion": "2018-06-01",
+            "properties": {
+                "annotations": [],
+                "type": "HttpServer",
+                "typeProperties": {
+                    "url": "[parameters('OpenMeteo_Api_properties_typeProperties_url')]",
+                    "enableServerCertificateValidation": true,
+                    "authenticationType": "Anonymous"
+                }
+            },
+            "dependsOn": []
+        },
+        {
+            "name": "[concat(parameters('factoryName'), '/RestCountries_Api')]",
+            "type": "Microsoft.DataFactory/factories/linkedServices",
+            "apiVersion": "2018-06-01",
+            "properties": {
+                "annotations": [],
+                "type": "HttpServer",
+                "typeProperties": {
+                    "url": "[parameters('RestCountries_Api_properties_typeProperties_url')]",
+                    "enableServerCertificateValidation": true,
+                    "authenticationType": "Anonymous"
+                }
+            },
+            "dependsOn": []
+        },
+        {
+            "name": "[concat(parameters('factoryName'), '/Waqi_Api')]",
+            "type": "Microsoft.DataFactory/factories/linkedServices",
+            "apiVersion": "2018-06-01",
+            "properties": {
+                "annotations": [],
+                "type": "HttpServer",
+                "typeProperties": {
+                    "url": "[parameters('Waqi_Api_properties_typeProperties_url')]",
+                    "enableServerCertificateValidation": false,
+                    "authenticationType": "Anonymous"
+                }
+            },
+            "dependsOn": []
+        },
+        {
+            "name": "[concat(parameters('factoryName'), '/databricks_logostics')]",
+            "type": "Microsoft.DataFactory/factories/linkedServices",
+            "apiVersion": "2018-06-01",
+            "properties": {
+                "annotations": [],
+                "type": "AzureDatabricks",
+                "typeProperties": {
+                    "domain": "https://adb-7405613514675340.0.azuredatabricks.net",
+                    "accessToken": {
+                        "type": "SecureString",
+                        "value": "[parameters('databricks_logostics_accessToken')]"
+                    },
+                    "existingClusterId": "[parameters('databricks_logostics_properties_typeProperties_existingClusterId')]"
+                }
+            },
+            "dependsOn": []
+        },
+        {
+            "name": "[concat(parameters('factoryName'), '/gold_master_pipeline')]",
+            "type": "Microsoft.DataFactory/factories/pipelines",
+            "apiVersion": "2018-06-01",
+            "properties": {
+                "activities": [
+                    {
+                        "name": "gold_Notebook",
+                        "type": "DatabricksNotebook",
+                        "dependsOn": [],
+                        "policy": {
+                            "timeout": "0.12:00:00",
+                            "retry": 0,
+                            "retryIntervalInSeconds": 30,
+                            "secureOutput": false,
+                            "secureInput": false
+                        },
+                        "userProperties": [],
+                        "typeProperties": {
+                            "notebookPath": "/Users/jitumistry.banaotech@gmail.com/gold layer/gold_layer"
+                        },
+                        "linkedServiceName": {
+                            "referenceName": "databricks_logostics",
+                            "type": "LinkedServiceReference"
+                        }
+                    }
+                ],
+                "policy": {
+                    "elapsedTimeMetric": {}
+                },
+                "annotations": [],
+                "lastPublishTime": "2026-05-30T01:45:41Z"
+            },
+            "dependsOn": [
+                "[concat(variables('factoryId'), '/linkedServices/databricks_logostics')]"
+            ]
+        },
+        {
+            "name": "[concat(parameters('factoryName'), '/config')]",
+            "type": "Microsoft.DataFactory/factories/datasets",
+            "apiVersion": "2018-06-01",
+            "properties": {
+                "linkedServiceName": {
+                    "referenceName": "AzureDataLake",
+                    "type": "LinkedServiceReference"
+                },
+                "annotations": [],
+                "type": "Json",
+                "typeProperties": {
+                    "location": {
+                        "type": "AzureBlobFSLocation",
+                        "fileName": "config.json",
+                        "folderPath": "config",
+                        "fileSystem": "bronze"
+                    }
+                },
+                "schema": {}
+            },
+            "dependsOn": [
+                "[concat(variables('factoryId'), '/linkedServices/AzureDataLake')]"
+            ]
+        },
+        {
+            "name": "[concat(parameters('factoryName'), '/OpenWeather_sink')]",
+            "type": "Microsoft.DataFactory/factories/datasets",
+            "apiVersion": "2018-06-01",
+            "properties": {
+                "linkedServiceName": {
+                    "referenceName": "AzureDataLake",
+                    "type": "LinkedServiceReference"
+                },
+                "parameters": {
+                    "city_name": {
+                        "type": "string"
+                    }
+                },
+                "annotations": [],
+                "type": "Json",
+                "typeProperties": {
+                    "location": {
+                        "type": "AzureBlobFSLocation",
+                        "fileName": {
+                            "value": "@concat(dataset().city_name,'_',\nformatDateTime(utcNow(),'yyyyMMddHH'),\n'.json')",
+                            "type": "Expression"
+                        },
+                        "folderPath": {
+                            "value": "@concat('openweathermap/year=',\nformatDateTime(utcNow(),'yyyy'),\n'/month=',\nformatDateTime(utcNow(),'MM'),\n'/day=',\nformatDateTime(utcNow(),'dd'),\n'/hour=',\nformatDateTime(utcNow(),'HH'))",
+                            "type": "Expression"
+                        },
+                        "fileSystem": "bronze"
+                    }
+                },
+                "schema": {}
+            },
+            "dependsOn": [
+                "[concat(variables('factoryId'), '/linkedServices/AzureDataLake')]"
+            ]
+        },
+        {
+            "name": "[concat(parameters('factoryName'), '/OpenWeather_source')]",
+            "type": "Microsoft.DataFactory/factories/datasets",
+            "apiVersion": "2018-06-01",
+            "properties": {
+                "linkedServiceName": {
+                    "referenceName": "OpenWeather_Api",
+                    "type": "LinkedServiceReference"
+                },
+                "parameters": {
+                    "lat": {
+                        "type": "string"
+                    },
+                    "lon": {
+                        "type": "string"
+                    },
+                    "api_key": {
+                        "type": "string"
+                    }
+                },
+                "annotations": [],
+                "type": "Json",
+                "typeProperties": {
+                    "location": {
+                        "type": "HttpServerLocation",
+                        "relativeUrl": {
+                            "value": "@concat('data/2.5/weather?lat=',\ndataset().lat,\n'&lon=',\ndataset().lon,\n'&appid=',\ndataset().api_key,\n'&units=metric')",
+                            "type": "Expression"
+                        }
+                    }
+                },
+                "schema": {}
+            },
+            "dependsOn": [
+                "[concat(variables('factoryId'), '/linkedServices/OpenWeather_Api')]"
+            ]
+        },
+        {
+            "name": "[concat(parameters('factoryName'), '/openMeteo_source')]",
+            "type": "Microsoft.DataFactory/factories/datasets",
+            "apiVersion": "2018-06-01",
+            "properties": {
+                "linkedServiceName": {
+                    "referenceName": "OpenMeteo_Api",
+                    "type": "LinkedServiceReference"
+                },
+                "parameters": {
+                    "lat": {
+                        "type": "string"
+                    },
+                    "lon": {
+                        "type": "string"
+                    },
+                    "api_key": {
+                        "type": "string"
+                    }
+                },
+                "annotations": [],
+                "type": "Json",
+                "typeProperties": {
+                    "location": {
+                        "type": "HttpServerLocation",
+                        "relativeUrl": {
+                            "value": "@concat('v1/forecast?latitude=',dataset().lat,'&longitude=',dataset().lon,dataset().api_key,'&units=metric')",
+                            "type": "Expression"
+                        }
+                    }
+                },
+                "schema": {}
+            },
+            "dependsOn": [
+                "[concat(variables('factoryId'), '/linkedServices/OpenMeteo_Api')]"
+            ]
+        },
+        {
+            "name": "[concat(parameters('factoryName'), '/OpenMeteo_sink')]",
+            "type": "Microsoft.DataFactory/factories/datasets",
+            "apiVersion": "2018-06-01",
+            "properties": {
+                "linkedServiceName": {
+                    "referenceName": "AzureDataLake",
+                    "type": "LinkedServiceReference"
+                },
+                "parameters": {
+                    "city_name": {
+                        "type": "string"
+                    }
+                },
+                "annotations": [],
+                "type": "Json",
+                "typeProperties": {
+                    "location": {
+                        "type": "AzureBlobFSLocation",
+                        "fileName": {
+                            "value": "@concat(dataset().city_name,'_',\nformatDateTime(utcNow(),'yyyyMMdd'),\n'.json')",
+                            "type": "Expression"
+                        },
+                        "folderPath": {
+                            "value": "@concat('openmeteo/year=',\nformatDateTime(utcNow(),'yyyy'),\n'/month=',\nformatDateTime(utcNow(),'MM'),\n'/day=',\nformatDateTime(utcNow(),'dd'),\n'/hour=',\nformatDateTime(utcNow(),'HH'))",
+                            "type": "Expression"
+                        },
+                        "fileSystem": "bronze"
+                    }
+                },
+                "schema": {}
+            },
+            "dependsOn": [
+                "[concat(variables('factoryId'), '/linkedServices/AzureDataLake')]"
+            ]
+        },
+        {
+            "name": "[concat(parameters('factoryName'), '/TomTom_source')]",
+            "type": "Microsoft.DataFactory/factories/datasets",
+            "apiVersion": "2018-06-01",
+            "properties": {
+                "linkedServiceName": {
+                    "referenceName": "myTomTom_Api",
+                    "type": "LinkedServiceReference"
+                },
+                "parameters": {
+                    "api_key": {
+                        "type": "string"
+                    },
+                    "lat": {
+                        "type": "string"
+                    },
+                    "lon": {
+                        "type": "string"
+                    }
+                },
+                "annotations": [],
+                "type": "Json",
+                "typeProperties": {
+                    "location": {
+                        "type": "HttpServerLocation",
+                        "relativeUrl": {
+                            "value": "@concat('/traffic/services/5/incidentDetails?bbox=',\nstring(sub(float(dataset().lon), 0.1)),',',\nstring(sub(float(dataset().lat), 0.1)),',',\nstring(add(float(dataset().lon), 0.1)),',',\nstring(add(float(dataset().lat), 0.1)),\n'&key=',\ndataset().api_key)",
+                            "type": "Expression"
+                        }
+                    }
+                },
+                "schema": {}
+            },
+            "dependsOn": [
+                "[concat(variables('factoryId'), '/linkedServices/myTomTom_Api')]"
+            ]
+        },
+        {
+            "name": "[concat(parameters('factoryName'), '/TomTom_sink')]",
+            "type": "Microsoft.DataFactory/factories/datasets",
+            "apiVersion": "2018-06-01",
+            "properties": {
+                "linkedServiceName": {
+                    "referenceName": "AzureDataLake",
+                    "type": "LinkedServiceReference"
+                },
+                "parameters": {
+                    "city_name": {
+                        "type": "string"
+                    }
+                },
+                "annotations": [],
+                "type": "Json",
+                "typeProperties": {
+                    "location": {
+                        "type": "AzureBlobFSLocation",
+                        "fileName": {
+                            "value": "@concat(dataset().city_name,'_',\nformatDateTime(utcNow(),'yyyyMMdd'),\n'.json')",
+                            "type": "Expression"
+                        },
+                        "folderPath": {
+                            "value": "@concat('tomtom/year=',\nformatDateTime(utcNow(),'yyyy'),\n'/month=',\nformatDateTime(utcNow(),'MM'),\n'/day=',\nformatDateTime(utcNow(),'dd'),\n'/hour=',\nformatDateTime(utcNow(),'HH'))",
+                            "type": "Expression"
+                        },
+                        "fileSystem": "bronze"
+                    }
+                },
+                "schema": {
+                    "type": "object",
+                    "properties": {
+                        "cities": {
+                            "type": "array",
+                            "items": {
+                                "type": "object",
+                                "properties": {
+                                    "name": {
+                                        "type": "string"
+                                    },
+                                    "lat": {
+                                        "type": "number"
+                                    },
+                                    "lon": {
+                                        "type": "number"
+                                    },
+                                    "country": {
+                                        "type": "string"
+                                    }
+                                }
+                            }
+                        },
+                        "latitude": {
+                            "type": "number"
+                        },
+                        "longitude": {
+                            "type": "number"
+                        },
+                        "generationtime_ms": {
+                            "type": "number"
+                        },
+                        "utc_offset_seconds": {
+                            "type": "integer"
+                        },
+                        "timezone": {
+                            "type": "string"
+                        },
+                        "timezone_abbreviation": {
+                            "type": "string"
+                        },
+                        "elevation": {
+                            "type": "number"
+                        },
+                        "hourly_units": {
+                            "type": "object",
+                            "properties": {
+                                "time": {
+                                    "type": "string"
+                                },
+                                "temperature_2m": {
+                                    "type": "string"
+                                },
+                                "rain": {
+                                    "type": "string"
+                                },
+                                "snowfall": {
+                                    "type": "string"
+                                },
+                                "precipitation_probability": {
+                                    "type": "string"
+                                },
+                                "wind_speed_10m": {
+                                    "type": "string"
+                                },
+                                "visibility": {
+                                    "type": "string"
+                                },
+                                "weather_code": {
+                                    "type": "string"
+                                }
+                            }
+                        },
+                        "hourly": {
+                            "type": "object",
+                            "properties": {
+                                "time": {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "string"
+                                    }
+                                },
+                                "temperature_2m": {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "number"
+                                    }
+                                },
+                                "rain": {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "number"
+                                    }
+                                },
+                                "snowfall": {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "number"
+                                    }
+                                },
+                                "precipitation_probability": {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "integer"
+                                    }
+                                },
+                                "wind_speed_10m": {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "number"
+                                    }
+                                },
+                                "visibility": {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "number"
+                                    }
+                                },
+                                "weather_code": {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "integer"
+                                    }
+                                }
+                            }
+                        },
+                        "year": {
+                            "type": "string"
+                        },
+                        "month": {
+                            "type": "string"
+                        },
+                        "day": {
+                            "type": "string"
+                        }
+                    }
+                }
+            },
+            "dependsOn": [
+                "[concat(variables('factoryId'), '/linkedServices/AzureDataLake')]"
+            ]
+        },
+        {
+            "name": "[concat(parameters('factoryName'), '/RestCountry_source')]",
+            "type": "Microsoft.DataFactory/factories/datasets",
+            "apiVersion": "2018-06-01",
+            "properties": {
+                "linkedServiceName": {
+                    "referenceName": "RestCountries_Api",
+                    "type": "LinkedServiceReference"
+                },
+                "parameters": {
+                    "country_code": {
+                        "type": "string"
+                    },
+                    "Api_key": {
+                        "type": "string"
+                    }
+                },
+                "annotations": [],
+                "type": "Json",
+                "typeProperties": {
+                    "location": {
+                        "type": "HttpServerLocation",
+                        "relativeUrl": {
+                            "value": "@concat('/v3.1/alpha/',dataset().country_code,dataset().Api_key)",
+                            "type": "Expression"
+                        }
+                    }
+                },
+                "schema": {}
+            },
+            "dependsOn": [
+                "[concat(variables('factoryId'), '/linkedServices/RestCountries_Api')]"
+            ]
+        },
+        {
+            "name": "[concat(parameters('factoryName'), '/RestCountry_sink')]",
+            "type": "Microsoft.DataFactory/factories/datasets",
+            "apiVersion": "2018-06-01",
+            "properties": {
+                "linkedServiceName": {
+                    "referenceName": "AzureDataLake",
+                    "type": "LinkedServiceReference"
+                },
+                "parameters": {
+                    "Country_name": {
+                        "type": "string"
+                    }
+                },
+                "annotations": [],
+                "type": "Json",
+                "typeProperties": {
+                    "location": {
+                        "type": "AzureBlobFSLocation",
+                        "fileName": {
+                            "value": "@concat(dataset().Country_name,'_',formatDateTime(utcNow(),'yyyyMMdd'),'.json')",
+                            "type": "Expression"
+                        },
+                        "folderPath": {
+                            "value": "@concat('restcountries/year=',formatDateTime(utcNow(),'yyyy'),\n'/month=',formatDateTime(utcNow(),'MM'),\n'/day=',formatDateTime(utcNow(),'dd'))",
+                            "type": "Expression"
+                        },
+                        "fileSystem": "bronze"
+                    }
+                },
+                "schema": {
+                    "type": "object",
+                    "properties": {
+                        "cities": {
+                            "type": "array",
+                            "items": {
+                                "type": "object",
+                                "properties": {
+                                    "name": {
+                                        "type": "string"
+                                    },
+                                    "lat": {
+                                        "type": "number"
+                                    },
+                                    "lon": {
+                                        "type": "number"
+                                    },
+                                    "country": {
+                                        "type": "string"
+                                    }
+                                }
+                            }
+                        },
+                        "latitude": {
+                            "type": "number"
+                        },
+                        "longitude": {
+                            "type": "number"
+                        },
+                        "generationtime_ms": {
+                            "type": "number"
+                        },
+                        "utc_offset_seconds": {
+                            "type": "integer"
+                        },
+                        "timezone": {
+                            "type": "string"
+                        },
+                        "timezone_abbreviation": {
+                            "type": "string"
+                        },
+                        "elevation": {
+                            "type": "number"
+                        },
+                        "hourly_units": {
+                            "type": "object",
+                            "properties": {
+                                "time": {
+                                    "type": "string"
+                                },
+                                "temperature_2m": {
+                                    "type": "string"
+                                },
+                                "rain": {
+                                    "type": "string"
+                                },
+                                "snowfall": {
+                                    "type": "string"
+                                },
+                                "precipitation_probability": {
+                                    "type": "string"
+                                },
+                                "wind_speed_10m": {
+                                    "type": "string"
+                                },
+                                "visibility": {
+                                    "type": "string"
+                                },
+                                "weather_code": {
+                                    "type": "string"
+                                }
+                            }
+                        },
+                        "hourly": {
+                            "type": "object",
+                            "properties": {
+                                "time": {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "string"
+                                    }
+                                },
+                                "temperature_2m": {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "number"
+                                    }
+                                },
+                                "rain": {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "number"
+                                    }
+                                },
+                                "snowfall": {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "number"
+                                    }
+                                },
+                                "precipitation_probability": {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "integer"
+                                    }
+                                },
+                                "wind_speed_10m": {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "number"
+                                    }
+                                },
+                                "visibility": {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "number"
+                                    }
+                                },
+                                "weather_code": {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "integer"
+                                    }
+                                }
+                            }
+                        },
+                        "year": {
+                            "type": "string"
+                        },
+                        "month": {
+                            "type": "string"
+                        },
+                        "day": {
+                            "type": "string"
+                        }
+                    }
+                }
+            },
+            "dependsOn": [
+                "[concat(variables('factoryId'), '/linkedServices/AzureDataLake')]"
+            ]
+        },
+        {
+            "name": "[concat(parameters('factoryName'), '/Waqi_sink')]",
+            "type": "Microsoft.DataFactory/factories/datasets",
+            "apiVersion": "2018-06-01",
+            "properties": {
+                "linkedServiceName": {
+                    "referenceName": "AzureDataLake",
+                    "type": "LinkedServiceReference"
+                },
+                "parameters": {
+                    "city_name": {
+                        "type": "string"
+                    }
+                },
+                "annotations": [],
+                "type": "Json",
+                "typeProperties": {
+                    "location": {
+                        "type": "AzureBlobFSLocation",
+                        "fileName": {
+                            "value": "@concat(dataset().city_name,'_',\r\nformatDateTime(utcNow(),'yyyyMMdd'),\r\n'.json')",
+                            "type": "Expression"
+                        },
+                        "folderPath": {
+                            "value": "@concat('waqi/year=',formatDateTime(utcNow(),'yyyy'),\n'/month=',formatDateTime(utcNow(),'MM'),\n'/day=',formatDateTime(utcNow(),'dd'))",
+                            "type": "Expression"
+                        },
+                        "fileSystem": "bronze"
+                    }
+                },
+                "schema": {}
+            },
+            "dependsOn": [
+                "[concat(variables('factoryId'), '/linkedServices/AzureDataLake')]"
+            ]
+        },
+        {
+            "name": "[concat(parameters('factoryName'), '/Waqi_source')]",
+            "type": "Microsoft.DataFactory/factories/datasets",
+            "apiVersion": "2018-06-01",
+            "properties": {
+                "linkedServiceName": {
+                    "referenceName": "Waqi_Api",
+                    "type": "LinkedServiceReference"
+                },
+                "parameters": {
+                    "lat": {
+                        "type": "string"
+                    },
+                    "lon": {
+                        "type": "string"
+                    },
+                    "api_key": {
+                        "type": "string"
+                    }
+                },
+                "annotations": [],
+                "type": "Json",
+                "typeProperties": {
+                    "location": {
+                        "type": "HttpServerLocation",
+                        "relativeUrl": {
+                            "value": "@concat('/feed/geo:',\ndataset().lat,';',dataset().lon,\n'/?token=',dataset().api_key)",
+                            "type": "Expression"
+                        }
+                    }
+                },
+                "schema": {}
+            },
+            "dependsOn": [
+                "[concat(variables('factoryId'), '/linkedServices/Waqi_Api')]"
+            ]
+        },
+        {
+            "name": "[concat(parameters('factoryName'), '/OpenWeatherMap_ingestion')]",
+            "type": "Microsoft.DataFactory/factories/pipelines",
+            "apiVersion": "2018-06-01",
+            "properties": {
+                "activities": [
+                    {
+                        "name": "ForEach1",
+                        "type": "ForEach",
+                        "dependsOn": [
+                            {
+                                "activity": "LookupConfigFile",
+                                "dependencyConditions": [
+                                    "Succeeded"
+                                ]
+                            }
+                        ],
+                        "userProperties": [],
+                        "typeProperties": {
+                            "items": {
+                                "value": "@activity('LookupConfigFile').output.value[0].cities",
+                                "type": "Expression"
+                            },
+                            "batchCount": 3,
+                            "activities": [
+                                {
+                                    "name": "CopyOpenWeather",
+                                    "type": "Copy",
+                                    "dependsOn": [],
+                                    "policy": {
+                                        "timeout": "0.12:00:00",
+                                        "retry": 0,
+                                        "retryIntervalInSeconds": 30,
+                                        "secureOutput": false,
+                                        "secureInput": false
+                                    },
+                                    "userProperties": [],
+                                    "typeProperties": {
+                                        "source": {
+                                            "type": "JsonSource",
+                                            "storeSettings": {
+                                                "type": "HttpReadSettings",
+                                                "requestMethod": "GET"
+                                            },
+                                            "formatSettings": {
+                                                "type": "JsonReadSettings"
+                                            }
+                                        },
+                                        "sink": {
+                                            "type": "JsonSink",
+                                            "storeSettings": {
+                                                "type": "AzureBlobFSWriteSettings"
+                                            },
+                                            "formatSettings": {
+                                                "type": "JsonWriteSettings"
+                                            }
+                                        },
+                                        "enableStaging": false
+                                    },
+                                    "inputs": [
+                                        {
+                                            "referenceName": "OpenWeather_source",
+                                            "type": "DatasetReference",
+                                            "parameters": {
+                                                "lat": {
+                                                    "value": "@item().lat",
+                                                    "type": "Expression"
+                                                },
+                                                "lon": {
+                                                    "value": "@item().lon",
+                                                    "type": "Expression"
+                                                },
+                                                "api_key": {
+                                                    "value": "@pipeline().parameters.OpenWeather_Api_Key",
+                                                    "type": "Expression"
+                                                }
+                                            }
+                                        }
+                                    ],
+                                    "outputs": [
+                                        {
+                                            "referenceName": "OpenWeather_sink",
+                                            "type": "DatasetReference",
+                                            "parameters": {
+                                                "city_name": {
+                                                    "value": "@item().name",
+                                                    "type": "Expression"
+                                                }
+                                            }
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    },
+                    {
+                        "name": "LookupConfigFile",
+                        "type": "Lookup",
+                        "dependsOn": [],
+                        "policy": {
+                            "timeout": "0.12:00:00",
+                            "retry": 0,
+                            "retryIntervalInSeconds": 30,
+                            "secureOutput": false,
+                            "secureInput": false
+                        },
+                        "userProperties": [],
+                        "typeProperties": {
+                            "source": {
+                                "type": "JsonSource",
+                                "storeSettings": {
+                                    "type": "AzureBlobFSReadSettings",
+                                    "recursive": true,
+                                    "enablePartitionDiscovery": false
+                                },
+                                "formatSettings": {
+                                    "type": "JsonReadSettings"
+                                }
+                            },
+                            "dataset": {
+                                "referenceName": "config",
+                                "type": "DatasetReference",
+                                "parameters": {}
+                            },
+                            "firstRowOnly": false
+                        }
+                    },
+                    {
+                        "name": "OpenWeather_Notebook",
+                        "type": "DatabricksNotebook",
+                        "dependsOn": [
+                            {
+                                "activity": "ForEach1",
+                                "dependencyConditions": [
+                                    "Succeeded"
+                                ]
+                            }
+                        ],
+                        "policy": {
+                            "timeout": "0.12:00:00",
+                            "retry": 0,
+                            "retryIntervalInSeconds": 30,
+                            "secureOutput": false,
+                            "secureInput": false
+                        },
+                        "userProperties": [],
+                        "typeProperties": {
+                            "notebookPath": "/Users/jitumistry.banaotech@gmail.com/silver_layer/silver_openWeatherMap"
+                        },
+                        "linkedServiceName": {
+                            "referenceName": "databricks_logostics",
+                            "type": "LinkedServiceReference"
+                        }
+                    }
+                ],
+                "policy": {
+                    "elapsedTimeMetric": {}
+                },
+                "parameters": {
+                    "OpenWeather_Api_Key": {
+                        "type": "string",
+                        "defaultValue": "a77407607388c1258e807910fc19780e"
+                    }
+                },
+                "annotations": [],
+                "lastPublishTime": "2026-05-30T01:42:40Z"
+            },
+            "dependsOn": [
+                "[concat(variables('factoryId'), '/datasets/config')]",
+                "[concat(variables('factoryId'), '/linkedServices/databricks_logostics')]",
+                "[concat(variables('factoryId'), '/datasets/OpenWeather_source')]",
+                "[concat(variables('factoryId'), '/datasets/OpenWeather_sink')]"
+            ]
+        }
+    ]
+}
