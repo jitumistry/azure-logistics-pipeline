@@ -1,0 +1,14 @@
+{
+  "cities": [
+    {"name": "Mumbai",    "lat": 19.0760, "lon": 72.8777, "country": "IN"},
+    {"name": "Delhi",     "lat": 28.6139, "lon": 77.2090, "country": "IN"},
+    {"name": "London",    "lat": 51.5074, "lon": -0.1278, "country": "GB"},
+    {"name": "New York",  "lat": 40.7128, "lon": -74.0060, "country": "US"},
+    {"name": "Tokyo",     "lat": 35.6762, "lon": 139.6503, "country": "JP"},
+    {"name": "Dubai",     "lat": 25.2048, "lon": 55.2708, "country": "AE"},
+    {"name": "Singapore", "lat": 1.3521,  "lon": 103.8198, "country": "SG"},
+    {"name": "Sydney",    "lat": -33.8688,"lon": 151.2093, "country": "AU"},
+    {"name": "Paris",     "lat": 48.8566, "lon": 2.3522,  "country": "FR"},
+    {"name": "São Paulo", "lat": -23.5505,"lon": -46.6333, "country": "BR"}
+  ]
+}
