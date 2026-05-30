@@ -1,0 +1,21 @@
+
+CREATE MASTER KEY ENCRYPTION BY PASSWORD = 'YOUR_PASSWORD';
+
+
+CREATE DATABASE SCOPED CREDENTIAL logistic_credential
+WITH IDENTITY = 'Managed Identity'
+
+
+
+CREATE EXTERNAL DATA SOURCE gold_delta_source
+WITH (
+    LOCATION = 'abfss://<CONTAINER>@<STORAGE_LOCATION>.dfs.core.windows.net',
+    CREDENTIAL = logistic_credential
+);
+
+
+CREATE EXTERNAL FILE FORMAT parquet_ff
+WITH (
+    FORMAT_TYPE = PARQUET,
+    DATA_COMPRESSION = 'org.apache.hadoop.io.compress.SnappyCodec'
+);
